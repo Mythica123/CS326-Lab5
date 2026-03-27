@@ -38,7 +38,21 @@
   </section>
 
   <section class="glass-panel entries-panel">
-    <section id="entries-panel">
+    <div class="panel-header">
+      <h2>Journal Entries</h2>
+      <input
+        type="search"
+        name="query"
+        placeholder="Search entries..."
+        class="search-input"
+        hx-get="/entries/search"
+        hx-trigger="keyup changed delay:500ms"
+        hx-target="#journal-list"
+        hx-swap="innerHTML"
+      />
+    </div>
+
+    <section id="journal-list">
       <%- include("partials/entryList", { entries }) %>
     </section>
   </section>
