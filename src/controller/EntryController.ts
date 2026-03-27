@@ -1,4 +1,4 @@
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { IEntryService } from "../service/EntryService.js";
 import { ILoggingService } from "../service/LoggingService.js";
 import { EntryError } from "../lib/errors.js";
@@ -7,6 +7,7 @@ import { EntryError } from "../lib/errors.js";
 export interface IEntryController {
   showEntries(res: Response): Promise<void>;
   createFromForm(res: Response, title: string, body: string, tag: string): Promise<void>;
+  search(req: Request, res: Response, q: string): Promise<void>; //Added search method to controller interface
 }
 
 class EntryController implements IEntryController {
@@ -77,6 +78,36 @@ class EntryController implements IEntryController {
     }
 
     await this.renderEntryList(res);
+  }
+
+  async search(req: Request, res: Response, q: string): Promise<void> {
+    this.logger.info(`Searching entries with query: ${q}`);
+    const result = await this.service.search(q);
+
+    if (!result.ok) {
+      const error = result.value;
+      const status = this.mapErrorStatus(error);
+
+      if (status === 400){
+        this.logger.warn(`Search rejected: ${error.message}`);
+      }
+      else if (status === 404){
+        this.logger.warn(`Search returned no entries: ${error.message}`);
+      }
+      else {
+        this.logger.error(`Search failed: ${error.message}`);
+      }
+
+      res.status(status).render("entries/partials/error", { message: error.message });
+      return;
+    }
+
+    if (!result.ok) {
+      res.status(500).render("entries/partials/error", { message: "Unable to search entries." });
+      return;
+    }
+
+    res.render("entries/index", { entries: result.value, pageError: null });
   }
 }
 
